@@ -1,0 +1,141 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- ENUMS ---
+enum Role {
+  STUDENT
+  STAFF
+  ADMIN
+}
+
+enum PaymentMethod {
+  MPESA
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  COLLECTED
+  CANCELLED
+}
+
+// --- MODELS ---
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  phone     String?  @unique
+  password  String?
+  role      Role     @default(STUDENT) // [cite: 52]
+  isActive  Boolean  @default(true) // [cite: 52]
+  createdAt DateTime @default(now()) // [cite: 52]
+
+  // Relations
+  orders          Order[]
+  staffActivities StaffActivity[]
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  name         String // [cite: 52]
+  emoji        String? // [cite: 52]
+  slug         String     @unique // [cite: 52]
+  displayOrder Int        @default(0) // [cite: 52]
+  
+  // Relations
+  foodItems    FoodItem[]
+}
+
+model FoodItem {
+  id           String   @id @default(cuid())
+  name         String // [cite: 52]
+  description  String? // [cite: 52]
+  price        Float // [cite: 52]
+  imageUrl     String? // [cite: 52]
+  isAvailable  Boolean  @default(true) // [cite: 52]
+  isOutOfStock Boolean  @default(false) // [cite: 52]
+  orderCount   Int      @default(0) // [cite: 52]
+  availableFrom String? // [cite: 52] Stored as "HH:mm"
+  availableTo   String? // [cite: 52] Stored as "HH:mm"
+  createdAt    DateTime @default(now()) // [cite: 52]
+
+  // Relations
+  categoryId   String // [cite: 52]
+  category     Category @relation(fields: [categoryId], references: [id])
+  orderItems   OrderItem[]
+}
+
+model Order {
+  id                 String   @id @default(cuid())
+  totalAmount        Float // [cite: 52]
+  paymentMethod      PaymentMethod // [cite: 52]
+  paymentStatus      PaymentStatus @default(PENDING) // [cite: 52]
+  orderStatus        OrderStatus   @default(PENDING) // [cite: 52]
+  mpesaReceiptNumber String? // [cite: 52]
+  pickupCode         String? // [cite: 52]
+  createdAt          DateTime @default(now()) // [cite: 52]
+
+  // Relations
+  studentId          String // [cite: 52]
+  student            User     @relation(fields: [studentId], references: [id])
+  orderItems         OrderItem[]
+  mpesaTransaction   MpesaTransaction?
+  staffActivities    StaffActivity[]
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  quantity   Int // [cite: 52]
+  unitPrice  Float // [cite: 52]
+  subtotal   Float // [cite: 52]
+
+  // Relations
+  orderId    String // [cite: 52]
+  order      Order    @relation(fields: [orderId], references: [id])
+  foodItemId String // [cite: 52]
+  foodItem   FoodItem @relation(fields: [foodItemId], references: [id])
+}
+
+model MpesaTransaction {
+  id                 String   @id @default(cuid())
+  checkoutRequestId  String // [cite: 52]
+  merchantRequestId  String // [cite: 52]
+  resultCode         Int? // [cite: 52]
+  resultDesc         String? // [cite: 52]
+  amount             Float // [cite: 52]
+  phoneNumber        String // [cite: 52]
+  createdAt          DateTime @default(now()) // [cite: 52]
+
+  // Relations
+  orderId            String   @unique // [cite: 52]
+  order              Order    @relation(fields: [orderId], references: [id])
+}
+
+model StaffActivity {
+  id        String   @id @default(cuid())
+  action    String // [cite: 52]
+  timestamp DateTime @default(now()) // [cite: 52]
+
+  // Relations
+  staffId   String // [cite: 52]
+  staff     User     @relation(fields: [staffId], references: [id])
+  orderId   String // [cite: 52]
+  order     Order    @relation(fields: [orderId], references: [id])
+}
