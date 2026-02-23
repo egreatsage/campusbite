@@ -12,7 +12,7 @@ export default auth((req) => {
   const role = req.auth?.user?.role;
 
   // 1. Allow access to public routes
-  if (pathname.startsWith("/login") || pathname.startsWith("/register") || pathname.startsWith("/api/mpesa")) {
+  if (pathname.startsWith("/login") || pathname.startsWith("/register") || pathname.startsWith("/api/register") || pathname.startsWith("/api/mpesa")) {
     return NextResponse.next();
   }
 
