@@ -4,13 +4,16 @@ import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import ImageUpload from "../../components/ImageUpload"; // Adjust path if needed
+import AdminNavbar from "../../components/AdminNavbar";
+import { auth } from "../../../lib/auth";
 
-export default function ManageFood() {
+export default async function ManageFood() {
   const [foods, setFoods] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
+   const session = await auth();
 
   const initialFormState = {
     name: "",
@@ -137,6 +140,7 @@ export default function ManageFood() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      <AdminNavbar user={session.user} />
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Manage Food Items</h1>
         <p className="text-gray-500 text-sm mt-1">Add, update, and manage your campus menu inventory.</p>
