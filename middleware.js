@@ -3,7 +3,6 @@ import NextAuth from "next-auth";
 import { authConfig } from "./lib/auth.config";
 import { NextResponse } from "next/server";
 
-// Initialize NextAuth here using ONLY the lightweight config (no Prisma!)
 const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
@@ -11,12 +10,26 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const role = req.auth?.user?.role;
 
-  // 1. Allow access to public routes
-  if (pathname.startsWith("/login") || pathname.startsWith("/register") || pathname.startsWith("/api/register") || pathname.startsWith("/api/mpesa")) {
+  // 🚨 CRITICAL FIX: Always allow NextAuth API routes to complete
+  if (pathname.startsWith("/api/auth")) {
     return NextResponse.next();
   }
 
-  // 2. Redirect unauthenticated users to login
+  // 1. Handle Public Routes (Login, Register, etc.)
+  if (
+    pathname.startsWith("/login") || 
+    pathname.startsWith("/register") || 
+    pathname.startsWith("/api/register") || 
+    pathname.startsWith("/api/mpesa")
+  ) {
+    // If they are already logged in and try to visit /login, send them home
+    if (isLoggedIn) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+    return NextResponse.next();
+  }
+
+  // 2. Redirect unauthenticated users trying to access protected routes
   if (!isLoggedIn) {
     return NextResponse.redirect(new URL("/login", req.url));
   }

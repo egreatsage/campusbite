@@ -30,9 +30,7 @@ export default function LoginPage() {
       setLoading(false);
     } else {
       toast.success("Successfully logged in!"); // 3. Add success toast
-      
-      // The middleware.js file will automatically catch this and redirect 
-      // the user to the correct dashboard based on their role!
+      setLoading(false);
       router.push("/"); 
       router.refresh();
     }
