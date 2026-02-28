@@ -23,13 +23,13 @@ export default function AdminDashboard() {
         </Link>
 
         {/* Placeholder: Manage Food */}
-        <div className="block p-6 bg-white rounded-2xl shadow-sm border border-gray-100 opacity-60 cursor-not-allowed">
+        <Link href="/admin/food" className="block p-6 bg-white rounded-2xl shadow-sm border border-gray-100 opacity-60 ">
            <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-800">Food Items</h2>
             <span className="text-2xl">🍔</span>
           </div>
           <p className="text-sm text-gray-500">Add food items, update pricing, and toggle out-of-stock status. (Coming Next)</p>
-        </div>
+        </Link>
 
         {/* Placeholder: Analytics */}
         <div className="block p-6 bg-white rounded-2xl shadow-sm border border-gray-100 opacity-60 cursor-not-allowed">

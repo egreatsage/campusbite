@@ -71,3 +71,79 @@ export async function POST(req) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function PUT(req) {
+  try {
+    const session = await auth();
+    if (!session || session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { id, name, emoji, displayOrder } = body;
+
+    if (!id || !name) {
+      return NextResponse.json({ error: "ID and Category name are required" }, { status: 400 });
+    }
+
+    const slug = generateSlug(name);
+
+    // Check if the NEW slug already exists on a DIFFERENT category
+    const existingCategory = await prisma.category.findFirst({
+      where: { slug, NOT: { id } }
+    });
+
+    if (existingCategory) {
+      return NextResponse.json({ error: "Another category with this name already exists." }, { status: 409 });
+    }
+
+    const updatedCategory = await prisma.category.update({
+      where: { id },
+      data: {
+        name,
+        emoji: emoji || null,
+        slug,
+        displayOrder: parseInt(displayOrder) || 0,
+      },
+    });
+
+    return NextResponse.json(updatedCategory, { status: 200 });
+  } catch (error) {
+    console.error("Failed to update category:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req) {
+  try {
+    const session = await auth();
+    if (!session || session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // Get the ID from the URL search params (e.g., ?id=123)
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Category ID is required" }, { status: 400 });
+    }
+
+    await prisma.category.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ message: "Category deleted successfully" }, { status: 200 });
+  } catch (error) {
+    console.error("Failed to delete category:", error);
+    
+    // Prisma throws error code P2003 for Foreign Key Constraint failures
+    if (error.code === 'P2003') {
+      return NextResponse.json({ 
+        error: "Cannot delete this category because it currently contains food items. Move or delete the food items first." 
+      }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
