@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import toast from "react-hot-toast"; // 1. Import toast
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,7 +18,6 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    // This calls the NextAuth credentials provider we set up in lib/auth.js
     const res = await signIn("credentials", {
       email,
       password,
@@ -26,8 +26,11 @@ export default function LoginPage() {
 
     if (res?.error) {
       setError("Invalid credentials. Please try again.");
+      toast.error("Invalid credentials. Please try again."); // 2. Add error toast
       setLoading(false);
     } else {
+      toast.success("Successfully logged in!"); // 3. Add success toast
+      
       // The middleware.js file will automatically catch this and redirect 
       // the user to the correct dashboard based on their role!
       router.push("/"); 

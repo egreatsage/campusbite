@@ -68,7 +68,7 @@ export default function RegisterPage() {
               type="text"
               name="name"
               required
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+              className="w-full px-4 py-3 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
               placeholder="John Doe"
               onChange={handleChange}
             />
@@ -80,7 +80,7 @@ export default function RegisterPage() {
               type="email"
               name="email"
               required
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+              className="w-full px-4 py-3 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
               placeholder="john@campus.edu"
               onChange={handleChange}
             />
@@ -92,7 +92,7 @@ export default function RegisterPage() {
               type="tel"
               name="phone"
               required
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+              className="w-full px-4 py-3 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
               placeholder="07XX XXX XXX"
               onChange={handleChange}
             />
@@ -104,7 +104,7 @@ export default function RegisterPage() {
               type="password"
               name="password"
               required
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+              className="w-full px-4 py-3 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
               placeholder="••••••••"
               onChange={handleChange}
             />
