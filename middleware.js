@@ -43,6 +43,13 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/menu", req.url)); 
   }
 
+  if (pathname.startsWith("/api/admin") && role !== "ADMIN") {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+}
+if (pathname.startsWith("/api/staff") && role !== "STAFF" && role !== "ADMIN") {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+}
+
   // 4. Default redirect for root "/"
   if (pathname === "/") {
     if (role === "ADMIN") return NextResponse.redirect(new URL("/admin/dashboard", req.url));

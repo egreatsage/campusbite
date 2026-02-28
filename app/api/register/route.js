@@ -3,6 +3,13 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "../../../lib/prisma";
 
+function formatPhoneForMpesa(phone) {
+  let cleaned = phone.replace(/\D/g, ""); // Remove non-digits
+  if (cleaned.startsWith("0")) return "254" + cleaned.substring(1);
+  if (cleaned.startsWith("+254")) return "254" + cleaned.substring(4);
+  if (cleaned.startsWith("254")) return cleaned;
+  return null; // Invalid length/format can be handled
+}
 
 export async function POST(req) {
   try {
@@ -12,7 +19,10 @@ export async function POST(req) {
     if (!name || !email || !phone || !password) {
       return NextResponse.json({ message: "All fields are required." }, { status: 400 });
     }
-
+const formattedPhone = formatPhoneForMpesa(phone);
+if (!formattedPhone || formattedPhone.length !== 12) {
+  return NextResponse.json({ message: "Invalid phone number format." }, { status: 400 });
+}
     // 2. Check if a user with this email or phone already exists
     const existingUser = await prisma.user.findFirst({
       where: {
