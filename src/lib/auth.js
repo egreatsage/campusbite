@@ -1,0 +1,48 @@
+// lib/auth.js
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+import prisma from "./prisma";
+import { authConfig } from "./auth.config";
+
+
+
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  pages: authConfig.pages,
+  callbacks: authConfig.callbacks,
+  providers: [
+    ...authConfig.providers,
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email or Phone", type: "text" },
+        password: { label: "Password", type: "password" }
+      },
+     async authorize(credentials) {
+  if (!credentials?.email || !credentials?.password) return null;
+
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: credentials.email },
+        { phone: credentials.email },
+      ],
+    },
+  });
+
+  if (!user || !user.password) return null;
+
+  // Block deactivated accounts
+  if (!user.isActive) return null;
+
+  const passwordsMatch = await bcrypt.compare(credentials.password, user.password);
+  if (!passwordsMatch) return null;
+
+  // Never send the hashed password into the JWT
+  const { password: _password, ...safeUser } = user;
+  return safeUser;
+},
+    })
+  ],
+});
