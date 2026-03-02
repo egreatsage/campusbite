@@ -35,7 +35,7 @@ export async function PATCH(req, { params }) {
       action: "STATUS_UPDATED",
       actorId: session.user.id,
       details: {
-        previousStatus: oldOrder.orderStatus,
+       
         newStatus: status,
         paymentStatusChangedToPaid: status === "COLLECTED" && oldOrder.paymentStatus !== "PAID"
       }
