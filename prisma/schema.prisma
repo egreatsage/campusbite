@@ -139,3 +139,15 @@ model StaffActivity {
   orderId   String // [cite: 52]
   order     Order    @relation(fields: [orderId], references: [id])
 }
+model AuditLog {
+  id          String   @id @default(cuid())
+  entityType  String   
+  entityId    String   
+  action      String   /
+  actorId     String?  // ID of the User/Staff/Admin who performed the action (can be null for system actions like Mpesa callbacks)
+  details     Json?    // Stores the payload: { "previousStatus": "PENDING", "newStatus": "PAID", "amount": 500 }
+  createdAt   DateTime @default(now())
+
+  // Optional: Relation to track the user who initiated the action
+  actor       User?    @relation(fields: [actorId], references: [id])
+}

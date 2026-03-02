@@ -1,3 +1,4 @@
+import { logAuditEvent } from "@/lib/auditLogger";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -44,6 +45,17 @@ export async function PATCH(req, { params }) {
       data: { 
         orderStatus: "CANCELLED",
         paymentStatus: order.paymentMethod === "MPESA" ? "FAILED" : "PENDING" 
+      }
+    });
+
+    await logAuditEvent({
+      entityType: "ORDER",
+      entityId: id,
+      action: "ORDER_CANCELLED_BY_STUDENT",
+      actorId: session.user.id,
+      details: {
+        previousStatus: order.orderStatus,
+        paymentMethod: order.paymentMethod
       }
     });
 

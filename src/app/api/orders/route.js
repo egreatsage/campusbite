@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { logAuditEvent } from "@/lib/auditLogger";
 
 
 
@@ -107,6 +108,18 @@ export async function POST(req) {
       }
     });
 
+    await logAuditEvent({
+      entityType: "ORDER",
+      entityId: newOrder.id,
+      action: "ORDER_CREATED",
+      actorId: session.user.id,
+      details: {
+        totalAmount: parseFloat(totalAmount),
+        paymentMethod: paymentMethod,
+        itemCount: items.length
+      }
+    });
+
     // 4. Handle Payment Logic based on Method
     if (paymentMethod === "CASH") {
       // Cash is simple. Just return success. Staff will mark it PAID later.
@@ -132,6 +145,13 @@ export async function POST(req) {
             phoneNumber: phone,
             amount: parseFloat(totalAmount)
           }
+        });
+        await logAuditEvent({
+          entityType: "TRANSACTION",
+          entityId: newOrder.id,
+          action: "MPESA_STK_PUSH_SENT",
+          actorId: session.user.id,
+          details: { phone, amount: parseFloat(totalAmount) }
         });
 
         return NextResponse.json({ 

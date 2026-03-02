@@ -1,3 +1,4 @@
+import { logAuditEvent } from "@/lib/auditLogger";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -51,6 +52,13 @@ export async function POST(req) {
           mpesaReceiptNumber: mpesaReceiptNumber
         }
       });
+      await logAuditEvent({
+        entityType: "TRANSACTION",
+        entityId: transaction.orderId,
+        action: "MPESA_PAYMENT_SUCCESS",
+        actorId: null, // System action
+        details: { mpesaReceiptNumber, amount: transaction.amount }
+      });
 
       console.log(`✅ Order ${transaction.orderId} Paid Successfully! Receipt: ${mpesaReceiptNumber}`);
 
@@ -72,6 +80,14 @@ export async function POST(req) {
           paymentStatus: "FAILED",
           orderStatus: "CANCELLED" // Cancel the order so it doesn't clutter the staff queue
         }
+      });
+
+      await logAuditEvent({
+        entityType: "TRANSACTION",
+        entityId: transaction.orderId,
+        action: "MPESA_PAYMENT_FAILED",
+        actorId: null, // System action
+        details: { failureReason: ResultDesc }
       });
 
       console.log(`❌ Order ${transaction.orderId} Payment Failed: ${ResultDesc}`);

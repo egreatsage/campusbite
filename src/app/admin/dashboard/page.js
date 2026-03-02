@@ -48,12 +48,36 @@ export default async function AdminDashboardPage() {
     },
   });
 
-  // 3. Fetch Popular Foods (Top 5)
-  const popularItems = await prisma.foodItem.findMany({
-    orderBy: { orderCount: 'desc' },
+  const topOrderItems = await prisma.orderItem.groupBy({
+    by: ['foodItemId'],
+    _sum: {
+      quantity: true,
+    },
+    orderBy: {
+      _sum: {
+        quantity: 'desc',
+      },
+    },
     take: 5,
-    select: { name: true, orderCount: true, price: true }
   });
+
+  // 3. Fetch Popular Foods (Top 5)
+ const popularItemsDetails = await prisma.foodItem.findMany({
+    where: {
+      id: { in: topOrderItems.map(item => item.foodItemId) }
+    },
+    select: { id: true, name: true, price: true }
+  });
+
+  // Map the summed quantities back to the item details
+  const popularItems = topOrderItems.map(topItem => {
+    const itemDetail = popularItemsDetails.find(i => i.id === topItem.foodItemId);
+    return {
+      name: itemDetail?.name || "Unknown Item",
+      price: itemDetail?.price || 0,
+      orderCount: topItem._sum.quantity,
+    };
+  }).sort((a, b) => b.orderCount - a.orderCount);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">

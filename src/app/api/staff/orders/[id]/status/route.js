@@ -1,3 +1,4 @@
+import { logAuditEvent } from "@/lib/auditLogger";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -26,6 +27,18 @@ export async function PATCH(req, { params }) {
     const updatedOrder = await prisma.order.update({
       where: { id: id },
       data: updateData
+    });
+
+    await logAuditEvent({
+      entityType: "ORDER",
+      entityId: id,
+      action: "STATUS_UPDATED",
+      actorId: session.user.id,
+      details: {
+        previousStatus: oldOrder.orderStatus,
+        newStatus: status,
+        paymentStatusChangedToPaid: status === "COLLECTED" && oldOrder.paymentStatus !== "PAID"
+      }
     });
 
     // TODO: Phase 4 requirement - Trigger SMS via Africa's Talking when status is 'READY'
