@@ -51,11 +51,11 @@ if (pathname.startsWith("/api/staff") && role !== "STAFF" && role !== "ADMIN") {
 }
 
   // // 4. Default redirect for root "/"
-  if (pathname === "/") {
-    if (role === "ADMIN") return NextResponse.redirect(new URL("/admin/dashboard", req.url));
-    if (role === "STAFF") return NextResponse.redirect(new URL("/staff/queue", req.url));
-    return NextResponse.redirect(new URL("/menu", req.url));
-  }
+  // if (pathname === "/") {
+  //   if (role === "ADMIN") return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+  //   if (role === "STAFF") return NextResponse.redirect(new URL("/staff/queue", req.url));
+  //   return NextResponse.redirect(new URL("/menu", req.url));
+  // }
 
   return NextResponse.next();
 });

@@ -15,7 +15,9 @@ export default function AdminNavbar({ user }) {
         { name: "Dashboard", href: "/admin/dashboard" },
         { name: "Food Items", href: "/admin/food" },
         { name: "Categories", href: "/admin/categories" },
-        { name: "Staff Mgmt", href: "/admin/users" }, // Phase 6 task
+        
+        { name: "Orders", href: "/admin/orders" },
+        { name: "Staff Mgmt", href: "/admin/users" },
       ]
     : [
         { name: "Kitchen Queue", href: "/staff/dashboard" },

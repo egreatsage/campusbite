@@ -8,7 +8,6 @@ export default function OrderQueue() {
   const [filter, setFilter] = useState("ALL");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch orders function
   const fetchOrders = async () => {
     try {
       const res = await fetch("/api/staff/orders");
@@ -23,33 +22,34 @@ export default function OrderQueue() {
     }
   };
 
-  // Setup Polling (Auto-refresh every 15 seconds)
   useEffect(() => {
-    fetchOrders(); // Initial fetch
-
-    const intervalId = setInterval(() => {
-      fetchOrders();
-    }, 15000); // 15 seconds
-
-    return () => clearInterval(intervalId); // Cleanup on unmount
+    fetchOrders();
+    const intervalId = setInterval(fetchOrders, 15000);
+    return () => clearInterval(intervalId);
   }, []);
-const updateStatus = async (orderId, newStatus) => {
-  try {
-    const res = await fetch(`/api/staff/orders/${orderId}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
 
-    if (!res.ok) throw new Error("Failed to update status");
-    
-    toast.success(`Order marked as ${newStatus}`);
-    fetchOrders(); // Refresh the list immediately
-  } catch (error) {
-    toast.error(error.message);
-  }
-};
-  // Filter Logic
+  const updateStatus = async (orderId, newStatus) => {
+    try {
+      const res = await fetch(`/api/staff/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+      toast.success(`Order marked as ${newStatus}`);
+      fetchOrders();
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const FILTERS = [
+    { key: "ALL", label: "All Orders" },
+    { key: "PENDING_CASH", label: "Pending Cash" },
+    { key: "MPESA_CONFIRMED", label: "M-Pesa" },
+    { key: "READY", label: "Ready" },
+  ];
+
   const filteredOrders = orders.filter(order => {
     if (filter === "ALL") return true;
     if (filter === "PENDING_CASH") return order.paymentMethod === "CASH" && order.paymentStatus === "PENDING";
@@ -58,112 +58,269 @@ const updateStatus = async (orderId, newStatus) => {
     return true;
   });
 
+  const getStatusStyle = (status) => {
+    const map = {
+      CONFIRMED:  { bg: "#eff6ff", color: "#1d4ed8" },
+      PREPARING:  { bg: "#fff7ed", color: "#c2410c" },
+      READY:      { bg: "#dcfce7", color: "#15803d" },
+      COLLECTED:  { bg: "#f3f4f6", color: "#6b7280" },
+    };
+    return map[status] || { bg: "#f3f4f6", color: "#6b7280" };
+  };
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading live queue...</div>;
+  const getStatusDot = (status) => {
+    const map = {
+      CONFIRMED: "#2563eb",
+      PREPARING: "#ea580c",
+      READY:     "#16a34a",
+      COLLECTED: "#9ca3af",
+    };
+    return map[status] || "#9ca3af";
+  };
+
+  if (isLoading) return (
+    <div style={{ textAlign: "center", padding: "60px 24px", color: "#9ca3af", fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>
+      <div style={{ fontSize: 28, marginBottom: 10, opacity: 0.4 }}>🍽️</div>
+      Loading live queue…
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        {["ALL", "PENDING_CASH", "MPESA_CONFIRMED", "READY"].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
-              filter === f 
-                ? "bg-gray-900 text-white" 
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {f.replace("_", " ")}
-          </button>
-        ))}
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap');
+
+        .oq-wrap { font-family: 'DM Sans', sans-serif; }
+
+        .oq-filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+        .oq-filter-btn {
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 13px; font-weight: 600;
+          border: 1.5px solid #e5e7eb;
+          background: white; color: #6b7280;
+          cursor: pointer;
+          transition: all 0.15s;
+          font-family: 'DM Sans', sans-serif;
+          display: flex; align-items: center; gap: 6px;
+        }
+        .oq-filter-btn:hover { border-color: #ea580c; color: #ea580c; }
+        .oq-filter-btn.active { background: #ea580c; color: white; border-color: #ea580c; }
+
+        .oq-count {
+          font-size: 11px; font-weight: 700;
+          padding: 1px 7px; border-radius: 20px;
+          background: rgba(255,255,255,0.25);
+        }
+        .oq-filter-btn:not(.active) .oq-count {
+          background: #f3f4f6; color: #9ca3af;
+        }
+
+        .oq-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 16px;
+        }
+
+        .oq-card {
+          background: white;
+          border-radius: 14px;
+          border: 1px solid #f3f4f6;
+          box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+          overflow: hidden;
+          display: flex; flex-direction: column;
+          transition: box-shadow 0.15s, transform 0.15s;
+        }
+        .oq-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); transform: translateY(-1px); }
+        .oq-card.cash-pending { border-color: #fed7aa; }
+
+        .oq-card-header {
+          padding: 14px 16px;
+          border-bottom: 1px solid #f9fafb;
+          display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .oq-card-header.cash { background: #fff7ed; }
+        .oq-card-header.normal { background: #fafafa; }
+
+        .oq-pickup {
+          font-size: 22px; font-weight: 900; color: #111827;
+          letter-spacing: -0.5px; font-family: 'DM Mono', monospace;
+          line-height: 1;
+        }
+        .oq-time { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+
+        .oq-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        .oq-status-badge {
+          display: inline-flex; align-items: center; gap: 5px;
+          font-size: 11px; font-weight: 700;
+          padding: 3px 9px; border-radius: 20px;
+          font-family: 'DM Mono', monospace;
+          letter-spacing: 0.02em;
+        }
+        .oq-status-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .oq-cash-badge {
+          font-size: 11px; font-weight: 700;
+          padding: 3px 9px; border-radius: 20px;
+          background: #fff7ed; color: #c2410c;
+          border: 1px solid #fed7aa;
+        }
+
+        .oq-items { padding: 14px 16px; flex-grow: 1; }
+        .oq-item {
+          display: flex; align-items: baseline; gap: 8px;
+          font-size: 13px; color: #374151; font-weight: 500;
+          padding: 5px 0;
+          border-bottom: 1px solid #f9fafb;
+        }
+        .oq-item:last-child { border-bottom: none; }
+        .oq-qty {
+          font-size: 12px; font-weight: 700; color: #9ca3af;
+          font-family: 'DM Mono', monospace;
+          min-width: 24px;
+        }
+
+        .oq-footer {
+          padding: 12px 16px;
+          background: #fafafa;
+          border-top: 1px solid #f3f4f6;
+          display: flex; flex-direction: column; gap: 8px;
+        }
+
+        .oq-action-btn {
+          width: 100%; padding: 10px;
+          border: none; border-radius: 9px;
+          font-size: 13px; font-weight: 700;
+          cursor: pointer; transition: all 0.15s;
+          font-family: 'DM Sans', sans-serif;
+          letter-spacing: 0.01em;
+        }
+        .oq-action-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+        .oq-action-btn:active { transform: translateY(0); }
+        .oq-btn-prepare { background: #ea580c; color: white; }
+        .oq-btn-ready   { background: #2563eb; color: white; }
+        .oq-btn-collect { background: #16a34a; color: white; }
+
+        .oq-cash-warning {
+          font-size: 11px; font-weight: 700;
+          color: #c2410c; text-align: center;
+          text-transform: uppercase; letter-spacing: 0.06em;
+          background: #fff7ed; padding: 6px 10px;
+          border-radius: 7px; border: 1px dashed #fed7aa;
+        }
+
+        .oq-empty {
+          background: white; border-radius: 14px;
+          border: 1px solid #f3f4f6;
+          padding: 60px 24px; text-align: center;
+          color: #9ca3af; font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+          .oq-grid { grid-template-columns: 1fr; }
+          .oq-filter-btn { font-size: 12px; padding: 7px 12px; }
+        }
+      `}</style>
+
+      <div className="oq-wrap">
+
+        {/* Filter Bar */}
+        <div className="oq-filter-bar">
+          {FILTERS.map(({ key, label }) => {
+            const count = key === "ALL" ? orders.length
+              : key === "PENDING_CASH" ? orders.filter(o => o.paymentMethod === "CASH" && o.paymentStatus === "PENDING").length
+              : key === "MPESA_CONFIRMED" ? orders.filter(o => o.paymentMethod === "MPESA" && o.orderStatus === "CONFIRMED").length
+              : orders.filter(o => o.orderStatus === "READY").length;
+
+            return (
+              <button
+                key={key}
+                className={`oq-filter-btn ${filter === key ? "active" : ""}`}
+                onClick={() => setFilter(key)}
+              >
+                {label}
+                <span className="oq-count">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Orders */}
+        {filteredOrders.length === 0 ? (
+          <div className="oq-empty">
+            <div style={{ fontSize: 32, marginBottom: 10, opacity: 0.35 }}>🍽️</div>
+            No orders match this filter right now.
+          </div>
+        ) : (
+          <div className="oq-grid">
+            {filteredOrders.map((order) => {
+              const isCashPending = order.paymentMethod === "CASH" && order.paymentStatus === "PENDING";
+              const statusStyle = getStatusStyle(order.orderStatus);
+
+              return (
+                <div key={order.id} className={`oq-card ${isCashPending ? "cash-pending" : ""}`}>
+
+                  {/* Header */}
+                  <div className={`oq-card-header ${isCashPending ? "cash" : "normal"}`}>
+                    <div>
+                      <div className="oq-pickup">#{order.pickupCode}</div>
+                      <div className="oq-time">
+                        {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    </div>
+                    <div className="oq-badges">
+                      <span
+                        className="oq-status-badge"
+                        style={{ background: statusStyle.bg, color: statusStyle.color }}
+                      >
+                        <span className="oq-status-dot" style={{ background: getStatusDot(order.orderStatus) }} />
+                        {order.orderStatus}
+                      </span>
+                      {order.paymentMethod === "CASH" && (
+                        <span className="oq-cash-badge">KSH {order.totalAmount}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Items */}
+                  <div className="oq-items">
+                    {order.orderItems.map(item => (
+                      <div key={item.id} className="oq-item">
+                        <span className="oq-qty">{item.quantity}×</span>
+                        {item.foodItem.name}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="oq-footer">
+                    {order.orderStatus === "CONFIRMED" && (
+                      <button className="oq-action-btn oq-btn-prepare" onClick={() => updateStatus(order.id, "PREPARING")}>
+                         Start Preparing
+                      </button>
+                    )}
+                    {order.orderStatus === "PREPARING" && (
+                      <button className="oq-action-btn oq-btn-ready" onClick={() => updateStatus(order.id, "READY")}>
+                         Mark as Ready
+                      </button>
+                    )}
+                    {order.orderStatus === "READY" && (
+                      <button className="oq-action-btn oq-btn-collect" onClick={() => updateStatus(order.id, "COLLECTED")}>
+                         Confirm Collection
+                      </button>
+                    )}
+                    {isCashPending && (
+                      <div className="oq-cash-warning">
+                         Collect KSH {order.totalAmount} before handing over
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
-
-      {/* Orders Grid */}
-      {filteredOrders.length === 0 ? (
-        <div className="bg-white p-10 rounded-xl border border-gray-100 text-center text-gray-500">
-          No orders match this filter right now.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredOrders.map((order) => (
-            <div key={order.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
-              
-              {/* Header */}
-              <div className={`p-3 border-b border-gray-100 flex justify-between items-center ${
-                order.paymentMethod === 'CASH' && order.paymentStatus === 'PENDING' ? 'bg-orange-50' : 'bg-gray-50'
-              }`}>
-                <div>
-                  <span className="text-xl font-black text-gray-900 tracking-tight">#{order.pickupCode}</span>
-                  <span className="text-xs text-gray-500 block">
-                    {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-                
-                <div className="text-right flex flex-col items-end gap-1">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded">
-                    {order.orderStatus}
-                  </span>
-                  {order.paymentMethod === "CASH" && (
-                    <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-bold rounded">
-                      CASH: KSH {order.totalAmount}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Items */}
-              <div className="p-4 flex-grow">
-                <ul className="space-y-2 mb-4">
-                  {order.orderItems.map(item => (
-                    <li key={item.id} className="text-sm font-medium text-gray-800 flex gap-2">
-                      <span className="font-bold text-gray-500">{item.quantity}x</span> 
-                      {item.foodItem.name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="p-4 bg-gray-50 border-t border-gray-100 mt-auto flex flex-col gap-2">
-                {order.orderStatus === "CONFIRMED" && (
-                  <button
-                    onClick={() => updateStatus(order.id, "PREPARING")}
-                    className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold hover:bg-orange-700"
-                  >
-                    Start Preparing
-                  </button>
-                )}
-
-                {order.orderStatus === "PREPARING" && (
-                  <button
-                    onClick={() => updateStatus(order.id, "READY")}
-                    className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700"
-                  >
-                    Mark as Ready
-                  </button>
-                )}
-
-                {order.orderStatus === "READY" && (
-                  <button
-                    onClick={() => updateStatus(order.id, "COLLECTED")}
-                    className="w-full bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700"
-                  >
-                    Confirm Collection
-                  </button>
-                )}
-
-                {order.paymentMethod === "CASH" && order.paymentStatus === "PENDING" && (
-                  <p className="text-[10px] text-center text-orange-700 font-bold uppercase tracking-tighter">
-                    Collect KSH {order.totalAmount} before handing over food
-                  </p>
-                )}
-              </div>
-
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    </>
   );
 }

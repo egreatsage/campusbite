@@ -19,10 +19,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       {/* 3. Now 'inter.className' will work perfectly */}
-      <body className={`${inter.className} bg-gray-50 min-h-screen`}>
+      <body className={`${inter.className} bg-gray-50 h-full`}>
         <Navbar />
         <Toaster position="top-center" />
-        <main>{children}</main>
+        <main className="bg-white">{children}</main>
         <FloatingCart />
       </body>
     </html>
