@@ -1,5 +1,6 @@
 "use client";
 
+import AdminNavbar from "@/components/AdminNavbar";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
@@ -112,6 +113,7 @@ export default function ManageCategories() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
+      <AdminNavbar/>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Manage Menu Categories</h1>
         <p className="text-gray-500 text-sm mt-1">Add, update, and remove campus food categories.</p>
