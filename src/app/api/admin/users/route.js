@@ -2,36 +2,79 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import bcrypt from "bcryptjs"; // Required for hashing passwords
 
-export async function PATCH(req) {
+// 1. CREATE USER (Staff/Admin)
+export async function POST(req) {
   try {
     const session = await auth();
-    
-    // Security Check: Only Admins can modify users
-    if (!session || session.user?.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!session || session.user?.role !== "ADMIN") return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+
+    const { name, email, phone, role, password } = await req.json();
+
+    // Check if email or phone already exists
+    const existingUser = await prisma.user.findFirst({
+      where: { OR: [{ email }, { phone }] },
+    });
+    if (existingUser) return NextResponse.json({ error: "Email or Phone already in use" }, { status: 400 });
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await prisma.user.create({
+      data: { name, email, phone, role, password: hashedPassword, isActive: true },
+    });
+
+    return NextResponse.json({ success: true, user: newUser });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
+  }
+}
+
+// 2. UPDATE USER (Details, Status, or Password)
+export async function PUT(req) {
+  try {
+    const session = await auth();
+    if (!session || session.user?.role !== "ADMIN") return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+
+    const { id, name, phone, role, isActive, password } = await req.json();
+
+    if (id === session.user.id && !isActive) {
+      return NextResponse.json({ error: "You cannot deactivate your own account" }, { status: 400 });
     }
 
-    const body = await req.json();
-    const { id, isActive } = body;
+    const updateData = { name, phone, role, isActive };
 
-    if (!id) {
-      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
-    }
-
-    // Prevent Admin from deactivating themselves
-    if (id === session.user.id) {
-        return NextResponse.json({ error: "You cannot deactivate your own account" }, { status: 400 });
+    // Only update the password if the admin typed a new one
+    if (password && password.trim() !== "") {
+      updateData.password = await bcrypt.hash(password, 10);
     }
 
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: { isActive },
+      data: updateData,
     });
 
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error) {
-    console.error("User Update Error:", error);
-    return NextResponse.json({ error: "Failed to update user status" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
+  }
+}
+
+// 3. DELETE USER
+export async function DELETE(req) {
+  try {
+    const session = await auth();
+    if (!session || session.user?.role !== "ADMIN") return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (id === session.user.id) return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
+
+    await prisma.user.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });
   }
 }
