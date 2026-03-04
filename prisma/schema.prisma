@@ -33,6 +33,13 @@ enum OrderStatus {
   READY
   COLLECTED
   CANCELLED
+  UNCOLLECTED
+}
+
+enum MessageStatus {
+  UNREAD
+  READ
+  RESOLVED
 }
 
 // --- MODELS ---
@@ -150,4 +157,13 @@ model AuditLog {
   createdAt   DateTime @default(now())
 
   actor       User?    @relation(fields: [actorId], references: [id])
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  status    MessageStatus @default(UNREAD)
+  createdAt DateTime @default(now())
 }
