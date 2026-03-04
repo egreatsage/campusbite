@@ -17,7 +17,7 @@ export default function AdminNavbar({ user }) {
         { name: "Food Items", href: "/admin/food" },
         { name: "Categories", href: "/admin/categories" },
         { name: "Orders", href: "/admin/orders" },
-        { name: "Staff Mgmt", href: "/admin/users" },
+        { name: "User Mgmt", href: "/admin/users" },
         { name: "Messages", href: "/admin/messages" },
       ]
     : [{ name: "Kitchen Queue", href: "/staff/dashboard" }];

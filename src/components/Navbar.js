@@ -20,12 +20,13 @@ export default async function Navbar() {
           </Link>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center gap-4">
+         
+          <div className="flex items-center space-x-6">
+             <div className="hidden md:flex items-center gap-4">
             <Link href="/contact" className="text-sm font-medium text-gray-700 hover:text-orange-600">
               Contact Us
             </Link>
           </div>
-          <div className="flex items-center space-x-6">
             {user ? (
               <>
                 <span className="text-sm text-gray-500 hidden md:block">
