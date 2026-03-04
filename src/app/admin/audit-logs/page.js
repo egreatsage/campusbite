@@ -73,7 +73,7 @@ export default async function AuditLogsPage() {
               ) : (
                 logs.map((log) => (
                   <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap" suppressHydrationWarning>
                       {formatDate(log.createdAt)}
                     </td>
                     

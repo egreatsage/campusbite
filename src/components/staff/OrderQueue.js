@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 
 export default function OrderQueue() {
   const [orders, setOrders] = useState([]);
-  const [filter, setFilter] = useState("ALL");
+  const [activeTab, setActiveTab] = useState("ACTIVE");
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchOrders = async () => {
@@ -43,37 +43,54 @@ export default function OrderQueue() {
     }
   };
 
-  const FILTERS = [
-    { key: "ALL", label: "All Orders" },
-    { key: "PENDING_CASH", label: "Pending Cash" },
-    { key: "MPESA_CONFIRMED", label: "M-Pesa" },
-    { key: "READY", label: "Ready" },
+  const TABS = [
+    { key: "ACTIVE", label: "Kitchen Queue",    emoji: "🍳" },
+    { key: "READY",  label: "Ready for Pickup", emoji: "✅" },
+    { key: "PAST",   label: "History",           emoji: "🗂️" },
   ];
 
+  // PENDING, PENDING_CASH, and CONFIRMED are all pre-kitchen statuses — include them all
+  const ACTIVE_STATUSES = ["PENDING", "PENDING_CASH", "CONFIRMED", "PREPARING"];
+  const READY_STATUSES  = ["READY"];
+  const PAST_STATUSES   = ["COLLECTED", "UNCOLLECTED", "CANCELLED"];
+
+  const tabCounts = {
+    ACTIVE: orders.filter(o => ACTIVE_STATUSES.includes(o.orderStatus)).length,
+    READY:  orders.filter(o => READY_STATUSES.includes(o.orderStatus)).length,
+    PAST:   orders.filter(o => PAST_STATUSES.includes(o.orderStatus)).length,
+  };
+
   const filteredOrders = orders.filter(order => {
-    if (filter === "ALL") return true;
-    if (filter === "PENDING_CASH") return order.paymentMethod === "CASH" && order.paymentStatus === "PENDING";
-    if (filter === "MPESA_CONFIRMED") return order.paymentMethod === "MPESA" && order.orderStatus === "CONFIRMED";
-    if (filter === "READY") return order.orderStatus === "READY";
+    if (activeTab === "ACTIVE") return ACTIVE_STATUSES.includes(order.orderStatus);
+    if (activeTab === "READY")  return READY_STATUSES.includes(order.orderStatus);
+    if (activeTab === "PAST")   return PAST_STATUSES.includes(order.orderStatus);
     return true;
   });
 
   const getStatusStyle = (status) => {
     const map = {
-      CONFIRMED:  { bg: "#eff6ff", color: "#1d4ed8" },
-      PREPARING:  { bg: "#fff7ed", color: "#c2410c" },
-      READY:      { bg: "#dcfce7", color: "#15803d" },
-      COLLECTED:  { bg: "#f3f4f6", color: "#6b7280" },
+      PENDING:       { bg: "#fefce8", color: "#a16207" },
+      PENDING_CASH:  { bg: "#fff7ed", color: "#c2410c" },
+      CONFIRMED:     { bg: "#eff6ff", color: "#1d4ed8" },
+      PREPARING:     { bg: "#fff7ed", color: "#c2410c" },
+      READY:         { bg: "#dcfce7", color: "#15803d" },
+      COLLECTED:     { bg: "#f3f4f6", color: "#6b7280" },
+      UNCOLLECTED:   { bg: "#fef2f2", color: "#b91c1c" },
+      CANCELLED:     { bg: "#f3f4f6", color: "#6b7280" },
     };
     return map[status] || { bg: "#f3f4f6", color: "#6b7280" };
   };
 
   const getStatusDot = (status) => {
     const map = {
-      CONFIRMED: "#2563eb",
-      PREPARING: "#ea580c",
-      READY:     "#16a34a",
-      COLLECTED: "#9ca3af",
+      PENDING:       "#ca8a04",
+      PENDING_CASH:  "#ea580c",
+      CONFIRMED:     "#2563eb",
+      PREPARING:     "#ea580c",
+      READY:         "#16a34a",
+      COLLECTED:     "#9ca3af",
+      UNCOLLECTED:   "#ef4444",
+      CANCELLED:     "#9ca3af",
     };
     return map[status] || "#9ca3af";
   };
@@ -92,37 +109,43 @@ export default function OrderQueue() {
 
         .oq-wrap { font-family: 'DM Sans', sans-serif; }
 
-        .oq-filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-
-        .oq-filter-btn {
-          padding: 8px 16px;
-          border-radius: 8px;
-          font-size: 13px; font-weight: 600;
-          border: 1.5px solid #e5e7eb;
-          background: white; color: #6b7280;
-          cursor: pointer;
-          transition: all 0.15s;
-          font-family: 'DM Sans', sans-serif;
-          display: flex; align-items: center; gap: 6px;
+        /* ── TABS ── */
+        .oq-tabs {
+          display: flex; gap: 4px;
+          background: #f3f4f6;
+          border-radius: 12px;
+          padding: 4px;
+          margin-bottom: 20px;
         }
-        .oq-filter-btn:hover { border-color: #ea580c; color: #ea580c; }
-        .oq-filter-btn.active { background: #ea580c; color: white; border-color: #ea580c; }
-
-        .oq-count {
+        .oq-tab {
+          flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+          padding: 10px 14px;
+          border-radius: 9px;
+          font-size: 13px; font-weight: 600;
+          border: none; background: transparent; color: #6b7280;
+          cursor: pointer; transition: all 0.15s;
+          font-family: 'DM Sans', sans-serif;
+          white-space: nowrap;
+        }
+        .oq-tab:hover { color: #374151; }
+        .oq-tab.active { background: white; color: #111827; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .oq-tab-count {
           font-size: 11px; font-weight: 700;
           padding: 1px 7px; border-radius: 20px;
-          background: rgba(255,255,255,0.25);
+          background: #e5e7eb; color: #6b7280;
         }
-        .oq-filter-btn:not(.active) .oq-count {
-          background: #f3f4f6; color: #9ca3af;
+        .oq-tab.active .oq-tab-count {
+          background: #ea580c; color: white;
         }
 
+        /* ── GRID ── */
         .oq-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
           gap: 16px;
         }
 
+        /* ── CARD ── */
         .oq-card {
           background: white;
           border-radius: 14px;
@@ -134,13 +157,14 @@ export default function OrderQueue() {
         }
         .oq-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); transform: translateY(-1px); }
         .oq-card.cash-pending { border-color: #fed7aa; }
+        .oq-card.past { opacity: 0.72; }
 
         .oq-card-header {
           padding: 14px 16px;
           border-bottom: 1px solid #f9fafb;
           display: flex; justify-content: space-between; align-items: flex-start;
         }
-        .oq-card-header.cash { background: #fff7ed; }
+        .oq-card-header.cash   { background: #fff7ed; }
         .oq-card-header.normal { background: #fafafa; }
 
         .oq-pickup {
@@ -186,20 +210,26 @@ export default function OrderQueue() {
           border-top: 1px solid #f3f4f6;
           display: flex; flex-direction: column; gap: 8px;
         }
+        .oq-footer-row { display: flex; gap: 8px; }
 
         .oq-action-btn {
-          width: 100%; padding: 10px;
+          flex: 1; padding: 10px;
           border: none; border-radius: 9px;
           font-size: 13px; font-weight: 700;
           cursor: pointer; transition: all 0.15s;
           font-family: 'DM Sans', sans-serif;
           letter-spacing: 0.01em;
         }
-        .oq-action-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+        .oq-action-btn:hover  { opacity: 0.88; transform: translateY(-1px); }
         .oq-action-btn:active { transform: translateY(0); }
         .oq-btn-prepare { background: #ea580c; color: white; }
         .oq-btn-ready   { background: #2563eb; color: white; }
         .oq-btn-collect { background: #16a34a; color: white; }
+        .oq-btn-noshow  {
+          background: #fef2f2; color: #b91c1c;
+          border: 1px solid #fecaca;
+          flex: 0 0 auto; padding: 10px 14px;
+        }
 
         .oq-cash-warning {
           font-size: 11px; font-weight: 700;
@@ -216,50 +246,49 @@ export default function OrderQueue() {
           color: #9ca3af; font-size: 14px;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 600px) {
           .oq-grid { grid-template-columns: 1fr; }
-          .oq-filter-btn { font-size: 12px; padding: 7px 12px; }
+          .oq-tabs { gap: 2px; }
+          .oq-tab { font-size: 12px; padding: 8px 10px; }
         }
       `}</style>
 
       <div className="oq-wrap">
 
-        {/* Filter Bar */}
-        <div className="oq-filter-bar">
-          {FILTERS.map(({ key, label }) => {
-            const count = key === "ALL" ? orders.length
-              : key === "PENDING_CASH" ? orders.filter(o => o.paymentMethod === "CASH" && o.paymentStatus === "PENDING").length
-              : key === "MPESA_CONFIRMED" ? orders.filter(o => o.paymentMethod === "MPESA" && o.orderStatus === "CONFIRMED").length
-              : orders.filter(o => o.orderStatus === "READY").length;
-
-            return (
-              <button
-                key={key}
-                className={`oq-filter-btn ${filter === key ? "active" : ""}`}
-                onClick={() => setFilter(key)}
-              >
-                {label}
-                <span className="oq-count">{count}</span>
-              </button>
-            );
-          })}
+        {/* ── Tabs ── */}
+        <div className="oq-tabs">
+          {TABS.map(({ key, label, emoji }) => (
+            <button
+              key={key}
+              className={`oq-tab ${activeTab === key ? "active" : ""}`}
+              onClick={() => setActiveTab(key)}
+            >
+              <span>{emoji} {label}</span>
+              <span className="oq-tab-count">{tabCounts[key]}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Orders */}
+        {/* ── Orders ── */}
         {filteredOrders.length === 0 ? (
           <div className="oq-empty">
             <div style={{ fontSize: 32, marginBottom: 10, opacity: 0.35 }}>🍽️</div>
-            No orders match this filter right now.
+            {activeTab === "ACTIVE" && "No active orders right now."}
+            {activeTab === "READY"  && "Nothing waiting for pickup."}
+            {activeTab === "PAST"   && "No past orders yet."}
           </div>
         ) : (
           <div className="oq-grid">
             {filteredOrders.map((order) => {
               const isCashPending = order.paymentMethod === "CASH" && order.paymentStatus === "PENDING";
+              const isPast = PAST_STATUSES.includes(order.orderStatus);
               const statusStyle = getStatusStyle(order.orderStatus);
 
               return (
-                <div key={order.id} className={`oq-card ${isCashPending ? "cash-pending" : ""}`}>
-
+                <div
+                  key={order.id}
+                  className={`oq-card ${isCashPending ? "cash-pending" : ""} ${isPast ? "past" : ""}`}
+                >
                   {/* Header */}
                   <div className={`oq-card-header ${isCashPending ? "cash" : "normal"}`}>
                     <div>
@@ -293,28 +322,37 @@ export default function OrderQueue() {
                   </div>
 
                   {/* Footer Actions */}
-                  <div className="oq-footer">
-                    {order.orderStatus === "CONFIRMED" && (
-                      <button className="oq-action-btn oq-btn-prepare" onClick={() => updateStatus(order.id, "PREPARING")}>
-                         Start Preparing
-                      </button>
-                    )}
-                    {order.orderStatus === "PREPARING" && (
-                      <button className="oq-action-btn oq-btn-ready" onClick={() => updateStatus(order.id, "READY")}>
-                         Mark as Ready
-                      </button>
-                    )}
-                    {order.orderStatus === "READY" && (
-                      <button className="oq-action-btn oq-btn-collect" onClick={() => updateStatus(order.id, "COLLECTED")}>
-                         Confirm Collection
-                      </button>
-                    )}
-                    {isCashPending && (
-                      <div className="oq-cash-warning">
-                         Collect KSH {order.totalAmount} before handing over
-                      </div>
-                    )}
-                  </div>
+                  {!isPast && (
+                    <div className="oq-footer">
+                      {["PENDING", "PENDING_CASH", "CONFIRMED"].includes(order.orderStatus) && (
+                        <button className="oq-action-btn oq-btn-prepare" onClick={() => updateStatus(order.id, "PREPARING")}>
+                          🍳 Start Preparing
+                        </button>
+                      )}
+                      {order.orderStatus === "PREPARING" && (
+                        <button className="oq-action-btn oq-btn-ready" onClick={() => updateStatus(order.id, "READY")}>
+                          ✅ Mark as Ready
+                        </button>
+                      )}
+                      {order.orderStatus === "READY" && (
+                        <>
+                          <div className="oq-footer-row">
+                            <button className="oq-action-btn oq-btn-collect" onClick={() => updateStatus(order.id, "COLLECTED")}>
+                              {order.paymentMethod === "CASH" ? "💵 Confirm Payment & Pickup" : "✅ Confirm Collection"}
+                            </button>
+                            <button className="oq-action-btn oq-btn-noshow" onClick={() => updateStatus(order.id, "UNCOLLECTED")} title="Mark as No Show">
+                              👻 No Show
+                            </button>
+                          </div>
+                          {isCashPending && (
+                            <div className="oq-cash-warning">
+                              💰 Collect KSH {order.totalAmount} before handing over
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}

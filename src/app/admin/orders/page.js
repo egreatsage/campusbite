@@ -1,9 +1,11 @@
+import AdminNavbar from '@/components/AdminNavbar'
 import OrderQueue from '@/components/staff/OrderQueue'
 import React from 'react'
 
 const OrdersPage = () => {
   return (
     <div style={{ minHeight: "100%", background: "#f9fafb", padding: "28px 24px", fontFamily: "'DM Sans', sans-serif" }}>
+      <AdminNavbar/>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
 
         {/* Page Header */}

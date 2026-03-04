@@ -3,8 +3,6 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-
-
 export async function PATCH(req, { params }) {
   try {
     const session = await auth();
@@ -15,13 +13,21 @@ export async function PATCH(req, { params }) {
     const { id } = await params;
     const { status } = await req.json();
 
-    // Define the update logic
+    // 1. Fetch the old order first to prevent ReferenceErrors!
+    const oldOrder = await prisma.order.findUnique({ where: { id } });
+    if (!oldOrder) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
     let updateData = { orderStatus: status };
 
-    // If marked as COLLECTED, we ensure payment is also marked as PAID
-    // This handles the "Cash on Pickup" flow where staff collects money physically
+    // 2. Handle Cash on Pickup / Collection logic
     if (status === "COLLECTED") {
       updateData.paymentStatus = "PAID";
+    }
+
+    // 3. Handle No-Shows (Uncollected)
+    if (status === "UNCOLLECTED") {
+      // You can decide if you want to refund or just mark as failed
+      updateData.orderStatus = "UNCOLLECTED"; 
     }
 
     const updatedOrder = await prisma.order.update({
@@ -35,13 +41,11 @@ export async function PATCH(req, { params }) {
       action: "STATUS_UPDATED",
       actorId: session.user.id,
       details: {
-       
         newStatus: status,
         paymentStatusChangedToPaid: status === "COLLECTED" && oldOrder.paymentStatus !== "PAID"
       }
     });
 
-    // TODO: Phase 4 requirement - Trigger SMS via Africa's Talking when status is 'READY'
     if (status === "READY") {
       console.log(`Sending SMS to student for order #${updatedOrder.pickupCode}`);
     }

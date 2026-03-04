@@ -84,15 +84,10 @@ export default async function AdminDashboardPage() {
       <AdminNavbar user={session.user} />
       <header className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Analytics</h1>
+          <h1 className="text-2xl font-bold text-gray-900"> Analytics</h1>
           <p className="text-gray-500">Overview of campus sales and operations</p>
         </div>
-        <div className="flex gap-4 items-center">
-          <span className="text-sm font-medium text-gray-700 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-            Admin: {session.user.name}
-          </span>
-          <LogoutButton />
-        </div>
+      
       </header>
 
       <main className="space-y-8">
