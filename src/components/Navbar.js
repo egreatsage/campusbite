@@ -41,7 +41,7 @@ export default async function Navbar() {
                 )}
                 
                 {user.role === "STAFF" && (
-                  <Link href="/staff/queue" className="text-sm font-medium text-gray-700 hover:text-orange-600">
+                  <Link href="/staff/dashboard" className="text-sm font-medium text-gray-700 hover:text-orange-600">
                     Orders Queue
                   </Link>
                 )}
