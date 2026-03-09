@@ -5,8 +5,12 @@ import { PrismaPg } from '@prisma/adapter-pg';
 
 const connectionString = process.env.DATABASE_URL;
 
-// Set up the connection pool and adapter
-const pool = new Pool({ connectionString });
+// Ensure SSL is properly configured for production environments (e.g. Render)
+const pool = new Pool({
+  connectionString,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
 const adapter = new PrismaPg(pool);
 
 // Prevent multiple instances of Prisma Client in development
